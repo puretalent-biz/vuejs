@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style type="text/css">
+        .cursor { cursor: pointer; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="container">
+        <div class="row mb-3">
+            <div class="col-sm-12">
+
+                <h3 class="mb-3">Liste VUEjs - AJAX</h3>
+
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text">Recherche</span>
+                  </div>
+                    <input type="text" class="form-control" v-model="search"/>
+                </div>
+
+                <table class="table">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col" v-for="(head, index) in header">
+                                <a class="cursor text-primary" @click.prevent="changeSort(head.id)">{{ head.value }}</a>
+                                <span v-if="$data.params.sort_field == head.id && $data.params.sort_direction == 'asc'">-</span>
+                                <span v-if="$data.params.sort_field == head.id && $data.params.sort_direction == 'desc'">+</span>
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, index) in lists">
+                            <th scope="row">({{ index }}) {{ item.id }}</th>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.email }}</td>
+                            <td>{{ item.created_at }}</td>
+                            <td><button type="button" class="btn btn-primary">Edit</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <nav class="mt-3">
+                  <ul class="pagination">
+                    <li v-bind:class="[pageItemClass, (pagination.current_page === 1) ? desactiveClass : '']">
+                        <a class="page-link" v-on:click="fetchPaginateUsers('first')">&laquo;</a>
+                    </li>
+                    <li v-bind:class="[pageItemClass, (pagination.current_page === 1) ? desactiveClass : '']">
+                        <a class="page-link" v-on:click="fetchPaginateUsers('prev')">Précédent</a>
+                    </li>
+
+                    <li class="page-item">
+                        <a class="page-link">{{ pagination.current_page }} of {{ pagination.last_page }}</a>
+                    </li>
+
+                    <li v-bind:class="[pageItemClass, (pagination.current_page === pagination.last_page) ? desactiveClass : '']">
+                        <a class="page-link" v-on:click="fetchPaginateUsers('next')">Suivant</a>
+                    </li>
+                    <li v-bind:class="[pageItemClass, (pagination.current_page === pagination.last_page) ? desactiveClass : '']">
+                        <a class="page-link" v-on:click="fetchPaginateUsers('last')">&raquo;</a>
+                    </li>
+                  </ul>
+                </nav>
+
+                <div class="input-group mb-3">
+                  <select class="custom-select" v-on:change="resultsByPage($event)">
+                    <option value="xxx" selected>Par page...</option>
+                    <option v-for="by_page in by_pages" v-bind:value="by_page" :selected="by_page == params.per_page">{{ by_page }}</option>
+                  </select>
+                </div>
+
+            </div>
+
+            <!-- <div class="col-sm-12">
+                <pre class="card bg-light">
+                    {{ lists }}
+                </pre>
+            </div> -->
+        </div>
+    </div>
+</div>
+<script>
+var app = new Vue(
+{
+    el: "#app",
+    created: function()
+    {
+
+
+        this.params_default = JSON.parse(JSON.stringify(this.params));
+        this.getResults();
+    },
+    mounted: function() {
+    },
+    data: {
+        url: 'http://local.foobar-api.com/api/users',
+        search: '',
+        lists: [],
+        by_pages: [5,10,15,20,25,30],
+        pagination: [],
+        desactiveClass: 'disabled',
+        pageItemClass: 'page-item text-primary',
+        params: {
+            page: 1,
+            per_page: 5,
+            sort_field: 'id',
+            sort_direction: 'desc'
+        },  
+        params_default: [],
+        header: [
+            { 'id':'id', 'value':'#Id'},
+            { 'id':'name', 'value':'Nom'},
+            { 'id':'email', 'value':'Email'},
+            { 'id':'created_at', 'value':'Crée le'}
+        ]
+    },
+    watch: {
+        search (val, old)
+        {
+            if (val.length >= 4 || old.length >= 4)
+            {
+                this.params = JSON.parse(JSON.stringify(this.params_default));
+                this.getResults();
+            }
+        }
+    },
+    methods: 
+    {
+        getResults: function() 
+        {
+            let params = {
+                ...this.params
+            };
+
+            if(this.search != '') {
+                params = { 'search': this.search, ...this.params };
+            }
+
+            axios.get(this.url, { params }).then(response => 
+            {
+                this.lists = response.data.data;
+                this.makePagination(response.data.meta);
+            }
+            ).catch(function (error) {
+                console.log(error);
+            });
+        },
+        changeSort(field)
+        {
+            if(this.params.sort_field === field)
+            {   
+                this.params.sort_direction = 
+                this.params.sort_direction === 'asc' ? 'desc' : 'asc';
+            } 
+            else {
+                this.params.sort_field = field;
+                this.params.sort_direction = 'asc';
+            }
+
+            this.getResults();
+        },
+        makePagination(data)
+        {
+            let pagination = {
+                current_page: data.current_page,
+                last_page: data.last_page,
+                per_page: data.per_page,
+                prev_page: (data.current_page-1),
+                next_page: (data.current_page+1),
+                total: data.total
+            };
+
+            this.pagination = pagination;
+            this.params.page = this.pagination.current_page;
+        },
+        fetchPaginateUsers(page)
+        {
+            if(page == 'prev') {
+                this.params.page = this.pagination.prev_page;
+            } else if (page == 'next') {
+                this.params.page = this.pagination.next_page;
+            } else if (page == 'first') {
+                this.params.page = 1;
+            } else if (page == 'last') {
+                this.params.page = this.pagination.last_page;
+            }
+
+            this.getResults();
+        },
+        resultsByPage(e)
+        {
+            if(e.target.value != 'xxx') 
+            {
+                var name = e.target.options[e.target.options.selectedIndex].text;
+                this.params.per_page = e.target.value;
+                this.getResults();
+            }
+        }
+    }
+});
+</script>
+</body>
+</html>
