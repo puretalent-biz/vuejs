@@ -14,17 +14,36 @@
 <div id="app">
     <div class="container">
         <div class="row mb-3">
-            <div class="col-sm-12">
-
+            <div class="col-md-12">
                 <h3 class="mb-3">Liste VUEjs - AJAX</h3>
+            </div>
 
-                <div class="input-group mb-3">
-                  <div class="input-group-prepend">
-                    <span class="input-group-text">Recherche</span>
-                  </div>
-                    <input type="text" class="form-control" v-model="search"/>
+            <div class="form-inline">
+
+              <div class="input-group mb-2 ml-3 mr-2">
+                <div class="input-group-prepend">
+                  <div class="input-group-text">Recherche</div>
                 </div>
+                <input type="text" class="form-control" v-model="search">
+              </div>
 
+              <div class="input-group mb-2 mr-sm-2">
+                <div class="input-group-prepend">
+                  <div class="input-group-text">De</div>
+                </div>
+                <input type="date" class="form-control" v-model="date_start">
+              </div>
+
+              <div class="input-group mb-2 mr-sm-2">
+                <div class="input-group-prepend">
+                  <div class="input-group-text">À</div>
+                </div>
+                <input type="date" class="form-control" v-model="date_end">
+              </div>
+
+            </div>
+
+            <div class="col-sm-12">
                 <table class="table">
                     <thead class="thead-dark">
                         <tr>
@@ -46,8 +65,9 @@
                         </tr>
                     </tbody>
                 </table>
-
-                <nav class="mt-3">
+            </div>
+            <div class="col-12 form-inline">
+                <nav class="col-6">
                   <ul class="pagination">
                     <li v-bind:class="[pageItemClass, (pagination.current_page === 1) ? desactiveClass : '']">
                         <a class="page-link" v-on:click="fetchPaginateUsers('first')">&laquo;</a>
@@ -69,11 +89,14 @@
                   </ul>
                 </nav>
 
-                <div class="input-group mb-3">
-                  <select class="custom-select" v-on:change="resultsByPage($event)">
-                    <option value="xxx" selected>Par page...</option>
-                    <option v-for="by_page in by_pages" v-bind:value="by_page" :selected="by_page == params.per_page">{{ by_page }}</option>
-                  </select>
+                <div class="col-3 offset-md-3 input-group">
+                    <div class="input-group-prepend">
+                      <div class="input-group-text">Par page</div>
+                    </div>
+                    <select class="custom-select" v-on:change="resultsByPage($event)">
+                        <option value="xxx" selected>Par page...</option>
+                        <option v-for="by_page in by_pages" v-bind:value="by_page" :selected="by_page == params.per_page">{{ by_page }}</option>
+                    </select>
                 </div>
 
             </div>
@@ -92,8 +115,6 @@ var app = new Vue(
     el: "#app",
     created: function()
     {
-
-
         this.params_default = JSON.parse(JSON.stringify(this.params));
         this.getResults();
     },
@@ -102,6 +123,8 @@ var app = new Vue(
     data: {
         url: 'http://local.foobar-api.com/api/users',
         search: '',
+        date_start: '',
+        date_end: '',
         lists: [],
         by_pages: [5,10,15,20,25,30],
         pagination: [],
@@ -129,6 +152,16 @@ var app = new Vue(
                 this.params = JSON.parse(JSON.stringify(this.params_default));
                 this.getResults();
             }
+        },
+        date_start (val, old) 
+        {
+            this.params = JSON.parse(JSON.stringify(this.params_default));
+            this.getResults();
+        },
+        date_end (val, old) 
+        {
+            this.params = JSON.parse(JSON.stringify(this.params_default));
+            this.getResults();
         }
     },
     methods: 
@@ -140,7 +173,15 @@ var app = new Vue(
             };
 
             if(this.search != '') {
-                params = { 'search': this.search, ...this.params };
+                params = { 'search': this.search, ...params };
+            }
+
+            if(this.date_start != '') {
+                params = { 'date_start': this.date_start, ...params };
+            }
+
+            if(this.date_end != '') {
+                params = { 'date_end': this.date_end, ...params };
             }
 
             axios.get(this.url, { params }).then(response => 
