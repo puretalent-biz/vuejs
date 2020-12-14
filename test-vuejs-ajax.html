@@ -166,28 +166,45 @@ var app = new Vue(
     },
     methods: 
     {
+        addParamsForGetList(field, data)
+        {
+            console.log(field);
+            
+            if(data != '') {
+                this.params = { [field]: data, ...this.params };
+            }
+        },
         getResults: function() 
         {
+            //if(this.search != '') {
+                //params = { 'search': this.search, ...params };
+            //}
+
+            this.addParamsForGetList('search', this.search);
+
+            this.addParamsForGetList('date_start', this.date_start);
+            console.log(this.params);
+            this.addParamsForGetList('date_end', this.date_end);
+            console.log(this.params);
+console.log('=======');
+console.log(this.params);
+            //if(this.date_start != '') {
+                //params = { 'date_start': this.date_start, ...params };
+            //}
+
+            //if(this.date_end != '') {
+                //params = { 'date_end': this.date_end, ...params };
+            //}
+
             let params = {
                 ...this.params
             };
-
-            if(this.search != '') {
-                params = { 'search': this.search, ...params };
-            }
-
-            if(this.date_start != '') {
-                params = { 'date_start': this.date_start, ...params };
-            }
-
-            if(this.date_end != '') {
-                params = { 'date_end': this.date_end, ...params };
-            }
 
             axios.get(this.url, { params }).then(response => 
             {
                 this.lists = response.data.data;
                 this.makePagination(response.data.meta);
+                this.params = JSON.parse(JSON.stringify(this.params_default));
             }
             ).catch(function (error) {
                 console.log(error);
